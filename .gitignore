@@ -1,0 +1,16 @@
+.playwright-mcp/
+.vscode/
+
+**/node_modules/
+**/dist/
+**/target/
+**/.idea/
+**/.gradle/
+**/build/
+
+*.log
+*.local
+
+/admin-web-dashboard-connected.png
+/admin-web-dashboard.png
+/android/local.properties
