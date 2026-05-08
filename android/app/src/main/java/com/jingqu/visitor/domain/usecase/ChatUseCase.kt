@@ -6,8 +6,12 @@ import com.jingqu.visitor.data.model.ChatMessage
 import com.jingqu.visitor.data.model.KnowledgeItem
 import com.jingqu.visitor.data.model.KnowledgeUpdate
 import com.jingqu.visitor.data.model.Notification
+import com.jingqu.visitor.data.model.VisitorMessage
 import com.jingqu.visitor.data.repository.PreferencesRepository
 import kotlinx.coroutines.flow.Flow
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import javax.inject.Inject
 
 class ChatUseCase @Inject constructor(
@@ -31,20 +35,15 @@ class ChatUseCase @Inject constructor(
     }
 
     suspend fun sendMessage(content: String, scenicSpot: String = "景区入口") {
-        if (webSocketClient.isConnected()) {
-            webSocketClient.sendChatMessage(content, scenicSpot)
-            return
-        }
-
         val visitorId = preferencesRepository.getVisitorId()
         val sessionId = preferencesRepository.getSessionId()
         val response = apiService.sendMessage(
-            com.jingqu.visitor.data.model.VisitorMessage(
+            VisitorMessage(
                 visitorId = visitorId,
                 sessionId = sessionId,
                 message = content,
                 scenicSpot = scenicSpot,
-                timestamp = java.time.LocalDateTime.now().toString()
+                timestamp = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()).format(Date())
             )
         )
 
@@ -52,6 +51,8 @@ class ChatUseCase @Inject constructor(
             val body = response.body()?.data
             if (!body.isNullOrBlank()) {
                 webSocketClient.emitLocalReply(body)
+            } else {
+                webSocketClient.emitLocalError("暂未获取到回复，请稍后重试")
             }
         } else {
             webSocketClient.emitLocalError("发送失败，请稍后重试")

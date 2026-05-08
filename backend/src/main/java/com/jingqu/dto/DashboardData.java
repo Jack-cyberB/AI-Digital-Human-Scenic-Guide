@@ -29,6 +29,8 @@ public class DashboardData {
         private String question;
         private String answer;
         private String scenicSpot;
+        private String finalAnswerSource;
+        private Boolean fallbackUsed;
         private LocalDateTime time;
     }
 }

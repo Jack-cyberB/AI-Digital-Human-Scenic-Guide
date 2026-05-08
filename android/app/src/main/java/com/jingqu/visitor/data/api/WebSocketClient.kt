@@ -12,6 +12,9 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.receiveAsFlow
 import okhttp3.*
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -72,7 +75,7 @@ class WebSocketClient @Inject constructor() {
                         "sessionId" to sessionId,
                         "scenicSpot" to scenicSpot.orEmpty().ifBlank { this@WebSocketClient.scenicSpot }
                     ),
-                    timestamp = java.time.LocalDateTime.now().toString()
+                    timestamp = currentTimestamp()
                 )
                 sendMessage(connectMessage)
             }
@@ -152,7 +155,7 @@ class WebSocketClient @Inject constructor() {
                 "message" to content,
                 "scenicSpot" to scenicSpot
             ),
-            timestamp = java.time.LocalDateTime.now().toString()
+            timestamp = currentTimestamp()
         )
         sendMessage(message)
     }
@@ -190,6 +193,10 @@ class WebSocketClient @Inject constructor() {
 
     fun isConnected(): Boolean {
         return webSocket != null
+    }
+
+    private fun currentTimestamp(): String {
+        return SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()).format(Date())
     }
 
     companion object {

@@ -1,6 +1,7 @@
 package com.jingqu.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.jingqu.dto.AiAnswerResult;
 import com.jingqu.dto.DashboardData;
 import com.jingqu.dto.NotificationRequest;
 import com.jingqu.dto.VisitorMessageRequest;
@@ -41,7 +42,7 @@ public class WebSocketService {
     private DailyStatisticsMapper statisticsMapper;
 
     @Autowired
-    private KnowledgeService knowledgeService;
+    private AiAnswerService aiAnswerService;
 
     @Autowired
     private NotificationService notificationService;
@@ -146,10 +147,17 @@ public class WebSocketService {
             interactionMapper.insert(interaction);
 
             // 查询知识库获取回答
-            String answer = knowledgeService.findBestAnswer(userMessage);
+            AiAnswerResult result = aiAnswerService.answer(userMessage, scenicSpot);
+            String answer = result.getAnswer();
 
             // 更新交互记录的回答
             interaction.setAnswer(answer);
+            interaction.setRouteTarget(result.getRouteTarget());
+            interaction.setRetrievedDocsCount(result.getRetrievedDocsCount());
+            interaction.setFallbackUsed(result.isFallbackUsed() ? 1 : 0);
+            interaction.setModelLatencyMs(result.getModelLatencyMs());
+            interaction.setFinalAnswerSource(result.getFinalAnswerSource());
+            interaction.setKnowledgeSources(String.join(" | ", result.getKnowledgeSources()));
             interactionMapper.updateById(interaction);
 
             // 构建回复消息
@@ -178,9 +186,7 @@ public class WebSocketService {
             );
 
             // 更新统计数据
-            statisticsService.incrementTodayInteractions();
-            statisticsService.updateHourlyData(LocalDateTime.now().getHour());
-            statisticsService.updatePopularQA(userMessage, answer);
+            statisticsService.recordAnswerMetrics(userMessage, answer, scenicSpot);
 
             // 广播更新到管理员大屏
             broadcastDashboardUpdate();
@@ -301,6 +307,25 @@ public class WebSocketService {
      */
     public int getOnlineVisitorCount() {
         return onlineVisitors.size();
+    }
+
+    public void recordInteraction(VisitorMessageRequest request, AiAnswerResult result) {
+        VisitorInteraction interaction = new VisitorInteraction();
+        interaction.setVisitorId(request.getVisitorId());
+        interaction.setSessionId(request.getSessionId());
+        interaction.setQuestion(request.getMessage());
+        interaction.setAnswer(result.getAnswer());
+        interaction.setInteractionType("QA");
+        interaction.setScenicSpot(request.getScenicSpot());
+        interaction.setInteractionTime(LocalDateTime.now());
+        interaction.setRouteTarget(result.getRouteTarget());
+        interaction.setRetrievedDocsCount(result.getRetrievedDocsCount());
+        interaction.setFallbackUsed(result.isFallbackUsed() ? 1 : 0);
+        interaction.setModelLatencyMs(result.getModelLatencyMs());
+        interaction.setFinalAnswerSource(result.getFinalAnswerSource());
+        interaction.setKnowledgeSources(String.join(" | ", result.getKnowledgeSources()));
+        interactionMapper.insert(interaction);
+        broadcastDashboardUpdate();
     }
 
     /**

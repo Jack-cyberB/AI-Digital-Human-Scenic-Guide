@@ -53,6 +53,8 @@ const AdminLayout: React.FC = () => {
 
   const handleUserMenuClick = (e: { key: string }) => {
     if (e.key === 'logout') {
+      localStorage.removeItem('admin_token');
+      localStorage.setItem('admin_skip_auto_login_once', '1');
       logout();
       navigate('/login');
     }

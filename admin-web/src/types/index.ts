@@ -51,6 +51,8 @@ export interface RecentInteraction {
   question: string;
   answer: string;
   scenicSpot: string;
+  finalAnswerSource?: string;
+  fallbackUsed?: boolean;
   time: string;
 }
 

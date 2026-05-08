@@ -21,6 +21,18 @@ public class VisitorInteraction {
     private String interactionType;
     
     private String scenicSpot;
+
+    private String routeTarget;
+
+    private Integer retrievedDocsCount;
+
+    private Integer fallbackUsed;
+
+    private Long modelLatencyMs;
+
+    private String finalAnswerSource;
+
+    private String knowledgeSources;
     
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime interactionTime;

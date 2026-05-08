@@ -69,6 +69,7 @@ public class StatisticsController {
         result.put("records", records);
         result.put("current", page);
         result.put("size", size);
+        result.put("total", records.size());
         
         return ResponseDTO.success(result);
     }

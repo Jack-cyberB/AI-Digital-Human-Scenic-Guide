@@ -38,16 +38,32 @@ const Interactions: React.FC = () => {
 
   const columns = [
     {
-      title: '访客ID', dataIndex: 'visitorId', key: 'visitorId', width: 180, ellipsis: true,
+      title: 'Visitor ID', dataIndex: 'visitorId', key: 'visitorId', width: 180, ellipsis: true,
       render: (id: string) => <Tag color="blue">{id.substring(0, 16)}...</Tag>,
     },
-    { title: '问题', dataIndex: 'question', key: 'question', ellipsis: true },
-    { title: '回答', dataIndex: 'answer', key: 'answer', ellipsis: true },
+    { title: 'Question', dataIndex: 'question', key: 'question', ellipsis: true },
+    { title: 'Answer', dataIndex: 'answer', key: 'answer', ellipsis: true },
     {
-      title: '景点', dataIndex: 'scenicSpot', key: 'scenicSpot', width: 120,
+      title: 'Spot', dataIndex: 'scenicSpot', key: 'scenicSpot', width: 120,
       render: (spot: string) => (spot ? <Tag color="green">{spot}</Tag> : '-'),
     },
-    { title: '时间', dataIndex: 'time', key: 'time', width: 180, render: (time: string) => dayjs(time).format('YYYY-MM-DD HH:mm:ss') },
+    {
+      title: 'Source', dataIndex: 'finalAnswerSource', key: 'finalAnswerSource', width: 100,
+      render: (source: string) => (
+        <Tag color={source === 'rag' ? 'blue' : 'default'}>
+          {source === 'rag' ? 'RAG' : 'Fallback'}
+        </Tag>
+      ),
+    },
+    {
+      title: 'Fallback', dataIndex: 'fallbackUsed', key: 'fallbackUsed', width: 90,
+      render: (fallbackUsed: boolean) => (
+        <Tag color={fallbackUsed ? 'gold' : 'green'}>
+          {fallbackUsed ? 'Yes' : 'No'}
+        </Tag>
+      ),
+    },
+    { title: 'Time', dataIndex: 'time', key: 'time', width: 180, render: (time: string) => dayjs(time).format('YYYY-MM-DD HH:mm:ss') },
   ];
 
   return (
@@ -57,8 +73,8 @@ const Interactions: React.FC = () => {
           <Card bordered={false} className="modern-card">
             <Space direction="vertical" size={4}>
               <div className="eyebrow">Interaction Timeline</div>
-              <h2 className="section-title">交互记录</h2>
-              <p className="section-description">查看游客与 AI 的历史咨询内容，便于持续优化问答知识与服务策略。</p>
+              <h2 className="section-title">Interaction Records</h2>
+              <p className="section-description">Review visitor conversations and confirm whether answers came from RAG or fallback logic.</p>
             </Space>
           </Card>
         </Col>
@@ -66,13 +82,13 @@ const Interactions: React.FC = () => {
           <Card bordered={false} className="modern-card summary-card">
             <HistoryOutlined />
             <strong>{filteredData.length}</strong>
-            <span>当前筛选结果</span>
+            <span>Current results</span>
           </Card>
         </Col>
       </Row>
 
       <Card bordered={false} className="modern-card toolbar-card">
-        <Search placeholder="搜索问题/回答/访客ID" onSearch={(value) => setSearchKeyword(value)} style={{ width: 320 }} allowClear prefix={<SearchOutlined />} />
+        <Search placeholder="Search question / answer / visitor ID" onSearch={(value) => setSearchKeyword(value)} style={{ width: 320 }} allowClear prefix={<SearchOutlined />} />
       </Card>
 
       <Card bordered={false} className="modern-card table-card">
@@ -87,7 +103,7 @@ const Interactions: React.FC = () => {
             total: pagination.total,
             showSizeChanger: true,
             showQuickJumper: true,
-            showTotal: (total) => `共 ${total} 条`,
+            showTotal: (total) => `Total ${total}`,
             onChange: (page, pageSize) => setPagination({ current: page, pageSize, total: pagination.total }),
           }}
         />
