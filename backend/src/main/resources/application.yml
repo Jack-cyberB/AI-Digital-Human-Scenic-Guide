@@ -1,0 +1,57 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: jingqu-backend
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/jingqu_db?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
+    username: root
+    password: 123456
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
+      data-locations: classpath:data.sql
+      encoding: UTF-8
+      continue-on-error: true
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+
+mybatis-plus:
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.jingqu.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      id-type: auto
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+  sql-parser-cache:
+    enabled: false
+
+# JWT配置
+jwt:
+  # HS512 requires at least 64 bytes; keep this secret sufficiently long
+  secret: jingquSecretKey2026ForDigitalPersonSystemPleaseUseAProperlyLongSecretKeyHere
+  expiration: 86400000
+
+# RAGFlow配置
+ragflow:
+  base-url: http://localhost:8080/v1
+  api-key: ${RAGFLOW_API_KEY:}
+  completion-path: /completion
+  datasets:
+    - http://localhost:8088/dataset/dataset/968198a2589811f1926d1d4137ae0fc8
+    - http://localhost:8088/dataset/dataset/2e838492589b11f1926d1d4137ae0fc8
+  default-avatar-action: "根据回答内容自动匹配"
+
+# WebSocket配置
+websocket:
+  heartbeat-interval: 30000
+  max-connections: 10000
