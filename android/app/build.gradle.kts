@@ -15,6 +15,7 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "1.0.0"
+        multiDexEnabled = true
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -31,13 +32,14 @@ android {
             )
         }
         debug {
-            buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:8080/\"")
-            buildConfigField("String", "WS_URL", "\"ws://10.0.2.2:8080/ws\"")
+            buildConfigField("String", "BASE_URL", "\"https://127.0.0.1:8443/\"")
+            buildConfigField("String", "WS_URL", "\"wss://127.0.0.1:8443/ws\"")
         }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        isCoreLibraryDesugaringEnabled = true
     }
     kotlinOptions {
         jvmTarget = "17"
@@ -57,6 +59,9 @@ android {
 }
 
 dependencies {
+    // Java 8+ desugaring for pre-API-26
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
+    // WebView for AMap (no SDK conflicts)
     // Core Android
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.appcompat:appcompat:1.6.1")
@@ -113,3 +118,4 @@ dependencies {
 kapt {
     correctErrorTypes = true
 }
+

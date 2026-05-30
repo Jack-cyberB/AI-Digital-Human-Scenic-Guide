@@ -17,7 +17,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
-import com.jingqu.visitor.ui.screens.MainScreen
+import com.jingqu.visitor.ui.screens.HomeScreen
 import com.jingqu.visitor.ui.theme.JingQuTheme
 import com.live2d.demo.full.GLRenderer
 import com.live2d.demo.full.LAppDelegate
@@ -33,7 +33,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    MainScreen()
+                    HomeScreen()
                 }
             }
         }

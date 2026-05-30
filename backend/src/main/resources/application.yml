@@ -1,5 +1,10 @@
 server:
-  port: 8080
+  port: 8443
+  ssl:
+    key-store: classpath:keystore.p12
+    key-store-password: jingqu123
+    key-store-type: PKCS12
+    key-alias: jingqu
 
 spring:
   application:
@@ -8,7 +13,7 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/jingqu_db?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
     username: root
-    password: 123456
+    password: root
   sql:
     init:
       mode: always
@@ -50,6 +55,11 @@ ragflow:
     - http://localhost:8088/dataset/dataset/968198a2589811f1926d1d4137ae0fc8
     - http://localhost:8088/dataset/dataset/2e838492589b11f1926d1d4137ae0fc8
   default-avatar-action: "根据回答内容自动匹配"
+
+deepseek:
+  base-url: https://api.deepseek.com
+  api-key: ${DEEPSEEK_API_KEY:}
+  model: deepseek-chat
 
 # WebSocket配置
 websocket:

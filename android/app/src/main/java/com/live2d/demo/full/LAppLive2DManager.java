@@ -90,11 +90,13 @@ public class LAppLive2DManager {
 
             projection.loadIdentity();
 
-            if (model.getModel().getCanvasWidth() > 1.0f && width < height) {
-                // 横に長いモデルを縦長ウィンドウに表示する際モデルの横サイズでscaleを算出する
+            if (width < height) {
+                // 竖屏：模型适配宽度，高度等比缩放
                 model.getModelMatrix().setWidth(2.0f);
                 projection.scale(1.0f, (float) width / (float) height);
             } else {
+                // 横屏
+                model.getModelMatrix().setHeight(2.0f);
                 projection.scale((float) height / (float) width, 1.0f);
             }
 
@@ -257,6 +259,10 @@ public class LAppLive2DManager {
         return models.size();
     }
 
+    public List<String> getModelDirs() {
+        return modelDir;
+    }
+
     /**
      * モーション再生時に実行されるコールバック関数
      */
@@ -288,7 +294,10 @@ public class LAppLive2DManager {
 
     private LAppLive2DManager() {
         setUpModel();
-        changeScene(0);
+        android.util.Log.e("LAppLive2DManager", "Available models: " + modelDir.toString());
+        int defaultIdx = modelDir.indexOf("Mao");
+        android.util.Log.e("LAppLive2DManager", "Mao index: " + defaultIdx + ", loading model: " + (defaultIdx >= 0 ? "Mao" : modelDir.get(0)));
+        changeScene(defaultIdx >= 0 ? defaultIdx : 0);
     }
 
     private final List<LAppModel> models = new ArrayList<>();

@@ -17,4 +17,6 @@ public class RagFlowChatResponse {
     private List<String> citations;
     private String source;
     private LocalDateTime timestamp;
+    private String dailyRoutes;  // 路线数据JSON
+    private String mode;         // "city" 或 "scenic"
 }

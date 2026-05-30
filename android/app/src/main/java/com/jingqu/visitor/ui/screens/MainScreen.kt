@@ -13,6 +13,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Face
+import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.KeyboardVoice
 import androidx.compose.material.icons.filled.Map
@@ -60,6 +62,8 @@ fun MainScreen(
     var inputText by remember { mutableStateOf("") }
 
     val listState = rememberLazyListState()
+
+    var isDigitalHumanMode by remember { mutableStateOf(false) }
 
 
 
@@ -160,21 +164,13 @@ fun MainScreen(
                 ),
 
                 actions = {
-
-                    IconButton(onClick = { }) {
-
+                    IconButton(onClick = { isDigitalHumanMode = !isDigitalHumanMode }) {
                         Icon(
-
-                            imageVector = Icons.Default.Settings,
-
-                            contentDescription = "设置",
-
+                            imageVector = if (isDigitalHumanMode) Icons.Default.Chat else Icons.Default.Face,
+                            contentDescription = if (isDigitalHumanMode) "文本模式" else "数字人模式",
                             tint = OnPrimary
-
                         )
-
                     }
-
                 }
 
             )
@@ -210,118 +206,47 @@ fun MainScreen(
 
     ) { paddingValues ->
 
-        Box(
+        if (isDigitalHumanMode) {
+            // 数字人模式：全屏Live2D + 浮动UI
+            Box(modifier = Modifier.fillMaxSize().padding(paddingValues).background(Color.Black)) {
+                Live2DModelCard(modifier = Modifier.fillMaxSize())
 
-            modifier = Modifier
-
-                .fillMaxSize()
-
-                .padding(paddingValues)
-
-                .background(
-
-                    Brush.verticalGradient(
-
-                        colors = listOf(ScenicMint, Background, SurfaceSoft)
-
-                    )
-
-                )
-
-        ) {
-
-            ScenicDigitalBackground(modifier = Modifier.matchParentSize())
-
-
-
-            Column(modifier = Modifier.fillMaxSize()) {
-
-                ConnectionStatusBar(
-                    isConnected = uiState.isConnected,
-                    isConnecting = uiState.isConnecting
-                )
-
-                ScenicSpotBanner(
-                    scenicSpot = uiState.currentScenicSpot,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                )
-
-                Live2DModelCard(
-                    modifier = Modifier
-                        .padding(horizontal = 16.dp, vertical = 10.dp)
-                        .height(220.dp)
-                )
-
-
-
-                QuickQuestionsRow(
-
-                    questions = uiState.quickQuestions,
-
-                    onQuestionClick = { viewModel.sendQuickQuestion(it) },
-
-                    modifier = Modifier.padding(bottom = 8.dp)
-
-                )
-
-
-
-                val connectionError = uiState.connectionError
-
-                if (connectionError != null) {
-
-                    ErrorNotice(
-
-                        message = connectionError,
-
-                        onRetry = viewModel::reconnect,
-
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
-
-                    )
-
+                LazyColumn(state = listState, modifier = Modifier.fillMaxWidth().fillMaxHeight(0.35f).align(Alignment.TopCenter).padding(8.dp)) {
+                    items(uiState.messages, key = { it.id }) { msg ->
+                        Text(
+                            text = if (msg.isFromUser) "👤 ${msg.content}" else "🤖 ${msg.content}",
+                            color = Color.White.copy(alpha = 0.9f),
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(vertical = 2.dp).background(Color.Black.copy(alpha = 0.3f), MaterialTheme.shapes.small).padding(8.dp)
+                        )
+                    }
                 }
 
-
-
-                LazyColumn(
-
-                    state = listState,
-
-                    modifier = Modifier
-
-                        .weight(1f)
-
-                        .fillMaxWidth(),
-
-                    contentPadding = PaddingValues(vertical = 8.dp)
-
-                ) {
-
-                    items(uiState.messages, key = { it.id }) { message ->
-
-                        ChatBubble(message = message)
-
+                Row(modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(12.dp).navigationBarsPadding(), verticalAlignment = Alignment.CenterVertically) {
+                    Surface(modifier = Modifier.weight(1f), shape = RoundedCornerShape(24.dp), color = Color.White.copy(alpha = 0.15f)) {
+                        TextField(value = inputText, onValueChange = { inputText = it }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("说点什么...", color = Color.White.copy(alpha = 0.4f)) }, colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Color.White, unfocusedTextColor = Color.White, focusedContainerColor = Color.Transparent, unfocusedContainerColor = Color.Transparent, focusedBorderColor = Color.Transparent, unfocusedBorderColor = Color.Transparent), singleLine = true)
                     }
-
-
-
-                    if (uiState.isTyping) {
-
-                        item {
-
-                            TypingIndicator()
-
-                        }
-
-                    }
-
+                    IconButton(onClick = { if (inputText.isNotBlank()) { viewModel.sendMessage(inputText); inputText = "" } }) { Icon(Icons.Default.Send, "发送", tint = Primary) }
                 }
-
             }
-
+        } else {
+            // 文本模式
+            Box(modifier = Modifier.fillMaxSize().padding(paddingValues).background(Brush.verticalGradient(colors = listOf(ScenicMint, Background, SurfaceSoft)))) {
+                ScenicDigitalBackground(modifier = Modifier.matchParentSize())
+                Column(modifier = Modifier.fillMaxSize()) {
+                    ConnectionStatusBar(isConnected = uiState.isConnected, isConnecting = uiState.isConnecting)
+                    ScenicSpotBanner(scenicSpot = uiState.currentScenicSpot, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+                    Live2DModelCard(modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp).height(220.dp))
+                    QuickQuestionsRow(questions = uiState.quickQuestions, onQuestionClick = { viewModel.sendQuickQuestion(it) }, modifier = Modifier.padding(bottom = 8.dp))
+                    val connectionError = uiState.connectionError
+                    if (connectionError != null) { ErrorNotice(message = connectionError, onRetry = viewModel::reconnect, modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) }
+                    LazyColumn(state = listState, modifier = Modifier.weight(1f).fillMaxWidth(), contentPadding = PaddingValues(vertical = 8.dp)) {
+                        items(uiState.messages, key = { it.id }) { message -> ChatBubble(message = message) }
+                        if (uiState.isTyping) { item { TypingIndicator() } }
+                    }
+                }
+            }
         }
-
     }
 
 
@@ -349,7 +274,7 @@ fun MainScreen(
 
 
 @Composable
-private fun Live2DModelCard(modifier: Modifier = Modifier) {
+fun Live2DModelCard(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val activity = context as? android.app.Activity
@@ -358,7 +283,7 @@ private fun Live2DModelCard(modifier: Modifier = Modifier) {
             setEGLContextClientVersion(2)
             setRenderer(GLRenderer())
             renderMode = GLSurfaceView.RENDERMODE_CONTINUOUSLY
-        }
+        }.also { LAppDelegate.setGlSurfaceView(it) }
     }
 
     DisposableEffect(lifecycleOwner) {
@@ -543,7 +468,7 @@ private fun ScenicSpotBanner(
 
 @Composable
 
-private fun ErrorNotice(
+fun ErrorNotice(
 
     message: String,
 

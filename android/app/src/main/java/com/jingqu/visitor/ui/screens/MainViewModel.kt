@@ -22,14 +22,16 @@ data class ChatUiState(
     val currentNotification: Notification? = null,
     val isTyping: Boolean = false,
     val currentScenicSpot: String = "景区入口",
-    val quickQuestions: List<QuickQuestion> = defaultQuickQuestions
+    val quickQuestions: List<QuickQuestion> = defaultQuickQuestions,
+    val routeDataJson: String? = null,
+    val routeMode: String? = null
 ) {
     companion object {
         val defaultQuickQuestions = listOf(
-            QuickQuestion(1, "景点介绍", "spot", "景区有哪些景点？"),
-            QuickQuestion(2, "路线规划", "route", "最佳的游览路线是什么？"),
-            QuickQuestion(3, "餐饮服务", "restaurant", "景区内有餐厅吗？"),
-            QuickQuestion(4, "帮助服务", "help", "我需要帮助")
+            QuickQuestion(1, "路线规划", "route", "请为我规划一份详细的北京一日游路线，包括上午和下午的景点安排、交通方式和美食推荐"),
+            QuickQuestion(2, "景点讲解", "spot", "请详细介绍一下这里的著名景点，包括历史背景和游览建议"),
+            QuickQuestion(3, "餐饮推荐", "restaurant", "附近有什么特色餐厅推荐？请具体到店名和招牌菜"),
+            QuickQuestion(4, "交通指引", "transport", "各个景点之间怎么走最方便？推荐交通方式")
         )
     }
 }
@@ -39,6 +41,8 @@ class MainViewModel @Inject constructor(
     private val chatUseCase: ChatUseCase
 ) : ViewModel() {
 
+    companion object { var routeCache: String? = null }
+
     private val _uiState = MutableStateFlow(ChatUiState())
     val uiState: StateFlow<ChatUiState> = _uiState.asStateFlow()
 
@@ -47,43 +51,23 @@ class MainViewModel @Inject constructor(
         observeMessages()
         observeNotifications()
         observeKnowledgeUpdates()
+        observeRouteData()
         connectToServer()
     }
 
-    private fun observeConnectionState() {
+    private fun observeRouteData() {
         viewModelScope.launch {
-            chatUseCase.connectionState.collect { state ->
-                when (state) {
-                    is WebSocketClient.ConnectionState.Connected -> {
-                        _uiState.update {
-                            it.copy(
-                                isConnected = true,
-                                isConnecting = false,
-                                connectionError = null
-                            )
-                        }
-                        addWelcomeMessage()
-                    }
-                    is WebSocketClient.ConnectionState.Disconnected -> {
-                        _uiState.update {
-                            it.copy(
-                                isConnected = false,
-                                isConnecting = false
-                            )
-                        }
-                    }
-                    is WebSocketClient.ConnectionState.Error -> {
-                        _uiState.update {
-                            it.copy(
-                                isConnected = false,
-                                isConnecting = false,
-                                connectionError = state.message
-                            )
-                        }
-                    }
-                }
+            chatUseCase.routeData.collect { (json, mode) ->
+                _uiState.update { it.copy(routeDataJson = json, routeMode = mode) }
+                routeCache = json
             }
         }
+    }
+
+    private fun observeConnectionState() {
+        // REST API模式：直接标记已连接
+        _uiState.update { it.copy(isConnected = true, isConnecting = false) }
+        addWelcomeMessage()
     }
 
     private fun observeMessages() {
@@ -154,8 +138,11 @@ class MainViewModel @Inject constructor(
     fun sendMessage(content: String) {
         if (content.isBlank()) return
 
+        val spot = _uiState.value.currentScenicSpot
+        val fullContent = if (spot != "景区入口" && !content.contains(spot)) "在${spot}，$content" else content
+
         val userMessage = ChatMessage(
-            content = content,
+            content = fullContent,
             isFromUser = true
         )
 
@@ -190,7 +177,6 @@ class MainViewModel @Inject constructor(
 
     fun updateScenicSpot(scenicSpot: String) {
         _uiState.update { it.copy(currentScenicSpot = scenicSpot) }
-        reconnect()
     }
 
     override fun onCleared() {

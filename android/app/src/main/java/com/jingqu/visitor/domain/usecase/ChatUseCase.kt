@@ -8,6 +8,8 @@ import com.jingqu.visitor.data.model.KnowledgeUpdate
 import com.jingqu.visitor.data.model.Notification
 import com.jingqu.visitor.data.repository.PreferencesRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.channels.Channel
 import javax.inject.Inject
 
 class ChatUseCase @Inject constructor(
@@ -20,6 +22,9 @@ class ChatUseCase @Inject constructor(
     val notifications: Flow<Notification> = webSocketClient.notifications
     val knowledgeUpdates: Flow<KnowledgeUpdate> = webSocketClient.knowledgeUpdates
 
+    private val _routeData = kotlinx.coroutines.channels.Channel<Pair<String, String>>(kotlinx.coroutines.channels.Channel.BUFFERED)
+    val routeData: Flow<Pair<String, String>> = _routeData.receiveAsFlow()
+
     suspend fun connect() {
         val visitorId = preferencesRepository.getVisitorId()
         webSocketClient.connect(visitorId)
@@ -31,11 +36,6 @@ class ChatUseCase @Inject constructor(
     }
 
     suspend fun sendMessage(content: String, scenicSpot: String = "景区入口") {
-        if (webSocketClient.isConnected()) {
-            webSocketClient.sendChatMessage(content, scenicSpot)
-            return
-        }
-
         val visitorId = preferencesRepository.getVisitorId()
         val sessionId = preferencesRepository.getSessionId()
         val response = apiService.sendMessage(
@@ -44,7 +44,7 @@ class ChatUseCase @Inject constructor(
                 sessionId = sessionId,
                 message = content,
                 scenicSpot = scenicSpot,
-                timestamp = java.time.LocalDateTime.now().toString()
+                timestamp = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())
             )
         )
 
@@ -52,6 +52,10 @@ class ChatUseCase @Inject constructor(
             val body = response.body()?.data
             if (body != null) {
                 val content = body.answer.ifBlank { "暂时没有获取到回答，请稍后重试。" }
+                // 如果有路线数据，发送到路线流
+                if (!body.dailyRoutes.isNullOrBlank()) {
+                    _routeData.trySend(Pair(body.dailyRoutes!!, body.mode ?: "city"))
+                }
                 webSocketClient.emitLocalReply(content, body.action, body.emotion)
             } else {
                 webSocketClient.emitLocalError("发送失败，请稍后重试")

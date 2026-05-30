@@ -16,6 +16,37 @@ import com.live2d.sdk.cubism.framework.CubismFramework;
 import static android.opengl.GLES20.*;
 
 public class LAppDelegate {
+    private static android.opengl.GLSurfaceView glSurfaceView;
+
+    public static void setGlSurfaceView(android.opengl.GLSurfaceView view) {
+        glSurfaceView = view;
+    }
+
+    public static android.opengl.GLSurfaceView getGlView() {
+        return glSurfaceView;
+    }
+
+    public static void switchModel() {
+        switchToModel(-1);
+    }
+
+    public static void switchToModel(int index) {
+        android.util.Log.d("LAppDelegate", "switchToModel index=" + index + ", glSurfaceView=" + (glSurfaceView != null));
+        if (glSurfaceView != null) {
+            glSurfaceView.queueEvent(new Runnable() {
+                @Override
+                public void run() {
+                    android.util.Log.d("LAppDelegate", "changeScene running on GL thread, index=" + index);
+                    if (index < 0) {
+                        LAppLive2DManager.getInstance().nextScene();
+                    } else {
+                        LAppLive2DManager.getInstance().changeScene(index);
+                    }
+                }
+            });
+        }
+    }
+
     public static LAppDelegate getInstance() {
         if (s_instance == null) {
             s_instance = new LAppDelegate();
