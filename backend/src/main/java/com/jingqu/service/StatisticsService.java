@@ -137,18 +137,9 @@ public class StatisticsService {
                 interaction.getQuestion(),
                 interaction.getAnswer(),
                 interaction.getScenicSpot(),
-                interaction.getFinalAnswerSource(),
-                interaction.getFallbackUsed() != null && interaction.getFallbackUsed() == 1,
                 interaction.getInteractionTime()
             ))
             .collect(Collectors.toList());
-    }
-
-    public void recordAnswerMetrics(String question, String answer, String scenicSpot) {
-        incrementTodayInteractions();
-        updateHourlyData(LocalDateTime.now().getHour());
-        updatePopularQA(question, answer);
-        updateHotspotSpots(scenicSpot);
     }
 
     /**

@@ -34,6 +34,21 @@ data class AIReply(
     @SerializedName("scenicSpot") val scenicSpot: String?
 )
 
+data class RagFlowChatResponse(
+    @SerializedName("answer") val answer: String,
+    @SerializedName("emotion") val emotion: String? = null,
+    @SerializedName("action") val action: String? = null,
+    @SerializedName("avatarTarget") val avatarTarget: String? = null,
+    @SerializedName("dailyRoutes") val dailyRoutes: String? = null,
+    @SerializedName("mode") val mode: String? = null,
+    @SerializedName("sessionId") val sessionId: String? = null,
+    @SerializedName("visitorId") val visitorId: String? = null,
+    @SerializedName("scenicSpot") val scenicSpot: String? = null,
+    @SerializedName("citations") val citations: List<String>? = null,
+    @SerializedName("source") val source: String? = null,
+    @SerializedName("timestamp") val timestamp: String? = null
+)
+
 data class WebSocketMessage(
     @SerializedName("type") val type: String,
     @SerializedName("target") val target: String?,

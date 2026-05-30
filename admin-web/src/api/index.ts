@@ -6,6 +6,8 @@ import type {
   DashboardData,
   KnowledgeItem,
   Notification,
+  AvatarStatus,
+  RagFlowHistoryItem,
 } from '../types';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
@@ -116,6 +118,12 @@ export const statisticsApi = {
     startDate?: string;
     endDate?: string;
   }) => api.get<ApiResponse<any>>('/api/statistics/interactions', { params }),
+};
+
+// RAGFlow / 数字人同步
+export const ragFlowApi = {
+  getAvatarStatus: () => api.get<ApiResponse<AvatarStatus>>('/api/ragflow/avatar/status'),
+  getHistory: () => api.get<ApiResponse<RagFlowHistoryItem[]>>('/api/ragflow/history'),
 };
 
 export default api;

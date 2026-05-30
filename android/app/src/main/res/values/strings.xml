@@ -1,20 +1,3 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">景区导览</string>
-    <string name="welcome_title">智能导览助手</string>
-    <string name="welcome_message">您好！我是您的智能导览助手。请问有什么可以帮助您的？</string>
-    <string name="send">发送</string>
-    <string name="input_hint">输入您的问题...</string>
-    <string name="quick_questions">快捷问题</string>
-    <string name="spot_intro">景点介绍</string>
-    <string name="route_plan">路线规划</string>
-    <string name="dining_service">餐饮服务</string>
-    <string name="help_service">帮助服务</string>
-    <string name="settings">设置</string>
-    <string name="about">关于我们</string>
-    <string name="notification_title">紧急通知</string>
-    <string name="notification_confirm">我知道了</string>
-    <string name="connection_established">已连接服务器</string>
-    <string name="connection_failed">连接服务器失败</string>
-    <string name="reconnecting">正在重新连接...</string>
+    <string name="app_name">Demo</string>
 </resources>

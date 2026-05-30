@@ -1,12 +1,11 @@
 package com.jingqu.controller;
 
 import com.jingqu.dto.ResponseDTO;
-import com.jingqu.dto.AiAnswerResult;
 import com.jingqu.dto.VisitorMessageRequest;
-import com.jingqu.service.AiAnswerService;
-import com.jingqu.service.StatisticsService;
-import com.jingqu.service.WebSocketService;
+import com.jingqu.service.KnowledgeService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,26 +15,18 @@ import org.springframework.web.bind.annotation.*;
 public class VisitorController {
 
     @Autowired
-    private AiAnswerService aiAnswerService;
+    private KnowledgeService knowledgeService;
 
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
-
-    @Autowired
-    private WebSocketService webSocketService;
-
-    @Autowired
-    private StatisticsService statisticsService;
 
     /**
      * 处理游客消息（HTTP接口，作为WebSocket的备份）
      */
     @PostMapping("/message")
     public ResponseDTO<String> sendMessage(@RequestBody VisitorMessageRequest request) {
-        AiAnswerResult result = aiAnswerService.answer(request.getMessage(), request.getScenicSpot());
-        webSocketService.recordInteraction(request, result);
-        statisticsService.recordAnswerMetrics(request.getMessage(), result.getAnswer(), request.getScenicSpot());
-        return ResponseDTO.success(result.getAnswer());
+        String answer = knowledgeService.findBestAnswer(request.getMessage());
+        return ResponseDTO.success(answer);
     }
 
     /**

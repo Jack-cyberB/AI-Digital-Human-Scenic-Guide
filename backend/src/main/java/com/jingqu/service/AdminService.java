@@ -51,18 +51,7 @@ public class AdminService {
             throw new RuntimeException("用户名或密码错误");
         }
         
-        boolean passwordMatched;
-        try {
-            passwordMatched = passwordEncoder.matches(request.getPassword(), admin.getPassword());
-        } catch (Exception e) {
-            passwordMatched = false;
-        }
-
-        if (!passwordMatched && request.getPassword() != null) {
-            passwordMatched = request.getPassword().equals(admin.getPassword());
-        }
-
-        if (!passwordMatched) {
+        if (!passwordEncoder.matches(request.getPassword(), admin.getPassword())) {
             throw new RuntimeException("用户名或密码错误");
         }
         

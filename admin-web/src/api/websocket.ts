@@ -1,4 +1,4 @@
-import type { WebSocketMessage } from '../types';
+import type { WebSocketMessage, DashboardData, AvatarStatus, RagFlowHistoryItem } from '../types';
 
 const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8080/ws';
 
@@ -11,6 +11,8 @@ class WebSocketClient {
   private maxReconnectAttempts = 5;
   private reconnectDelay = 3000;
   private messageHandlers: Map<string, MessageHandler[]> = new Map();
+  private avatarStatusHandlers: ((data: AvatarStatus) => void)[] = [];
+  private ragFlowHistoryHandlers: ((data: RagFlowHistoryItem) => void)[] = [];
   private connectHandlers: ConnectionHandler[] = [];
   private disconnectHandlers: ConnectionHandler[] = [];
 
@@ -66,6 +68,21 @@ class WebSocketClient {
     const handlers = this.messageHandlers.get(message.type) || [];
     handlers.forEach((handler) => handler(message));
 
+    if (message.type === 'RAGFLOW_UPDATE') {
+      const payload = message.payload as AvatarStatus;
+      this.avatarStatusHandlers.forEach((handler) => handler(payload));
+      this.ragFlowHistoryHandlers.forEach((handler) => handler({
+        visitorId: payload.visitorId || '',
+        sessionId: '',
+        question: payload.lastQuestion,
+        answer: payload.lastAnswer,
+        action: payload.lastAction,
+        emotion: payload.emotion,
+        scenicSpot: payload.scenicSpot,
+        timestamp: payload.timestamp,
+      }));
+    }
+
     // Also notify wildcard handlers
     const wildcardHandlers = this.messageHandlers.get('*') || [];
     wildcardHandlers.forEach((handler) => handler(message));
@@ -88,6 +105,14 @@ class WebSocketClient {
 
   onConnect(handler: ConnectionHandler) {
     this.connectHandlers.push(handler);
+  }
+
+  onAvatarStatus(handler: (data: AvatarStatus) => void) {
+    this.avatarStatusHandlers.push(handler);
+  }
+
+  onRagFlowHistory(handler: (data: RagFlowHistoryItem) => void) {
+    this.ragFlowHistoryHandlers.push(handler);
   }
 
   onDisconnect(handler: ConnectionHandler) {

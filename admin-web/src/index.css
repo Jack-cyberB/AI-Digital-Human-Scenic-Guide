@@ -336,6 +336,53 @@ button {
   overflow: hidden;
 }
 
+.avatar-preview-stage {
+  position: relative;
+  width: 210px;
+  height: 210px;
+  display: grid;
+  place-items: center;
+}
+
+.avatar-preview-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.34);
+  box-shadow: 0 0 0 18px rgba(255,255,255,0.06), 0 0 0 42px rgba(255,255,255,0.03);
+  animation: avatarPulse 3.6s ease-in-out infinite;
+}
+
+.avatar-preview-stage .avatar-preview {
+  position: relative;
+  z-index: 2;
+  width: 136px !important;
+  height: 136px !important;
+  display: grid;
+  place-items: center;
+  color: #0f172a;
+  background: rgba(255,255,255,0.94);
+  font-size: 56px;
+  font-weight: 950;
+  border: 6px solid rgba(255,255,255,0.22);
+  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.18);
+}
+
+.avatar-preview-badge {
+  position: absolute;
+  right: -8px;
+  bottom: 18px;
+  z-index: 3;
+  padding: 6px 12px;
+  border-radius: 999px;
+  color: #fff;
+  background: rgba(15, 118, 110, 0.9);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  box-shadow: 0 12px 28px rgba(15, 118, 110, 0.28);
+}
+
 .avatar-preview-surface::before {
   content: '';
   position: absolute;
@@ -346,9 +393,6 @@ button {
 .avatar-preview {
   position: relative;
   z-index: 1;
-  background: rgba(255,255,255,0.9);
-  color: #0f172a;
-  font-weight: 900;
 }
 
 .avatar-preview-tag {
@@ -367,6 +411,18 @@ button {
 .avatar-preview-meta span {
   color: #64748b;
   margin: 0;
+}
+
+.avatar-preview-status-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+@keyframes avatarPulse {
+  0%, 100% { transform: scale(0.98); opacity: 0.72; }
+  50% { transform: scale(1.04); opacity: 1; }
 }
 
 .studio-feature-list,

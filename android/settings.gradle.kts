@@ -16,3 +16,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "JingQuVisitor"
 include(":app")
+include(":Framework:framework")
+project(":Framework:framework").projectDir = file("Framework/framework")

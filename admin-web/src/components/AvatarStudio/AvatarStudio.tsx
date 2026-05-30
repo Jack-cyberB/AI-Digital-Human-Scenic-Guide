@@ -40,6 +40,10 @@ const AvatarStudio: React.FC = () => {
     message.success('数字人配置已保存（当前为前端展示配置，可继续对接后端接口）');
   };
 
+  const [lastQuestion, setLastQuestion] = useState('暂无');
+  const [lastAnswer, setLastAnswer] = useState('暂无');
+  const [lastAction, setLastAction] = useState('待机');
+
   return (
     <div className="page-card-shell">
       <Row gutter={[20, 20]} className="page-topbar">
@@ -68,13 +72,21 @@ const AvatarStudio: React.FC = () => {
           <Card bordered={false} className="modern-card" title="数字人预览">
             <div className="avatar-preview-card">
               <div className={`avatar-preview-surface ${selectedSkin.color}`}>
-                <Avatar size={120} className="avatar-preview">A</Avatar>
+                <div className="avatar-preview-stage">
+                  <div className="avatar-preview-ring" />
+                  <Avatar size={136} className="avatar-preview">人</Avatar>
+                  <div className="avatar-preview-badge">Live2D</div>
+                </div>
                 <Tag color="processing" className="avatar-preview-tag">{selectedSkin.theme}</Tag>
               </div>
               <div className="avatar-preview-meta">
                 <h3>{selectedSkin.name}</h3>
                 <p>当前声音：{selectedVoice.name}</p>
                 <span>{selectedVoice.style} · 语速 {speed}% · 音调 {pitch}%</span>
+                <div className="avatar-preview-status-row">
+                  <Tag color="blue">待机动画</Tag>
+                  <Tag color={gesture ? 'green' : 'default'}>{gesture ? '手势同步开启' : '手势同步关闭'}</Tag>
+                </div>
               </div>
             </div>
             <Divider />
@@ -83,6 +95,13 @@ const AvatarStudio: React.FC = () => {
               <div><SoundOutlined /> 支持多音色切换</div>
               <div><GlobalOutlined /> 可匹配景区文化主题</div>
             </div>
+            <Divider />
+            <Space direction="vertical" size={4}>
+              <strong>最近问答</strong>
+              <span>{lastQuestion}</span>
+              <span>{lastAnswer}</span>
+              <span>动作：{lastAction}</span>
+            </Space>
           </Card>
         </Col>
 

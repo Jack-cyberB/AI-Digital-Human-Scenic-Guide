@@ -7,14 +7,12 @@ import com.jingqu.visitor.data.model.AIReply
 import com.jingqu.visitor.data.model.ChatMessage
 import com.jingqu.visitor.data.model.KnowledgeUpdate
 import com.jingqu.visitor.data.model.Notification
+import com.jingqu.visitor.data.model.RagFlowChatResponse
 import com.jingqu.visitor.data.model.WebSocketMessage
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.receiveAsFlow
 import okhttp3.*
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -75,7 +73,7 @@ class WebSocketClient @Inject constructor() {
                         "sessionId" to sessionId,
                         "scenicSpot" to scenicSpot.orEmpty().ifBlank { this@WebSocketClient.scenicSpot }
                     ),
-                    timestamp = currentTimestamp()
+                    timestamp = java.time.LocalDateTime.now().toString()
                 )
                 sendMessage(connectMessage)
             }
@@ -107,12 +105,12 @@ class WebSocketClient @Inject constructor() {
             val message = gson.fromJson(text, WebSocketMessage::class.java)
 
             when (message.type) {
-                "AI_RESPONSE" -> {
-                    val reply = gson.fromJson(gson.toJson(message.payload), AIReply::class.java)
+                "AI_RESPONSE", "RAGFLOW_UPDATE" -> {
+                    val reply = gson.fromJson(gson.toJson(message.payload), RagFlowChatResponse::class.java)
                     val chatMessage = ChatMessage(
                         content = reply.answer,
                         isFromUser = false,
-                        type = reply.messageType
+                        type = reply.action?.takeIf { it.isNotBlank() } ?: reply.emotion?.takeIf { it.isNotBlank() } ?: "TEXT"
                     )
                     _messages.trySend(chatMessage)
                 }
@@ -155,17 +153,17 @@ class WebSocketClient @Inject constructor() {
                 "message" to content,
                 "scenicSpot" to scenicSpot
             ),
-            timestamp = currentTimestamp()
+            timestamp = java.time.LocalDateTime.now().toString()
         )
         sendMessage(message)
     }
 
-    fun emitLocalReply(content: String) {
+    fun emitLocalReply(content: String, action: String? = null, emotion: String? = null) {
         _messages.trySend(
             ChatMessage(
                 content = content,
                 isFromUser = false,
-                type = "TEXT"
+                type = action?.takeIf { it.isNotBlank() } ?: emotion?.takeIf { it.isNotBlank() } ?: "TEXT"
             )
         )
     }
@@ -193,10 +191,6 @@ class WebSocketClient @Inject constructor() {
 
     fun isConnected(): Boolean {
         return webSocket != null
-    }
-
-    private fun currentTimestamp(): String {
-        return SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()).format(Date())
     }
 
     companion object {

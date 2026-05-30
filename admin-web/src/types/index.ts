@@ -51,17 +51,7 @@ export interface RecentInteraction {
   question: string;
   answer: string;
   scenicSpot: string;
-  finalAnswerSource?: string;
-  fallbackUsed?: boolean;
   time: string;
-}
-
-export interface DailyStatistics {
-  id?: number;
-  statDate: string;
-  totalInteractions: number;
-  totalVisitors: number;
-  peakHour: number;
 }
 
 export interface KnowledgeItem {
@@ -91,6 +81,27 @@ export interface Notification {
   readCount?: number;
   createdBy?: string;
   createdAt?: string;
+}
+
+export interface AvatarStatus {
+  lastQuestion: string;
+  lastAnswer: string;
+  lastAction: string;
+  emotion?: string;
+  scenicSpot?: string;
+  visitorId?: string;
+  timestamp?: string;
+}
+
+export interface RagFlowHistoryItem {
+  visitorId: string;
+  sessionId: string;
+  question: string;
+  answer: string;
+  action?: string;
+  emotion?: string;
+  scenicSpot?: string;
+  timestamp?: string;
 }
 
 export interface WebSocketMessage {
