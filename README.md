@@ -1,264 +1,160 @@
-# 景区导览服务AI数字人系统
+# AI 数字人景区导览系统
 
-> 统一前后端分离架构的景区智能导览服务，包含Android游客端和Web管理后台
+> 基于 AI 大模型的智慧景区导览服务，集成 Live2D 数字人、高德地图路线规划、RAG 知识库问答
 
 ## 项目概述
 
-本项目为景区提供智能导览服务，采用统一后端 + 双前端（Android + Web）的分离架构：
+本项目为景区提供全方位的智能导览服务，采用 Spring Boot + Android + React 架构：
 
-- **游客端（Android）**：为游客提供AI数字人智能问答、景点导览服务
-- **管理员端（Web）**：为景区管理人员提供数据监控、知识库管理、紧急通知等功能
-- **统一后端**：集成REST API和WebSocket服务，实现双向实时通信
+- **游客端（Android）**：AI 数字人智能问答、高德地图步行路线导览、景区选择、个人中心
+- **管理员端（Web）**：数据大屏监控、知识库管理、紧急通知推送
+- **后端服务**：REST API + WebSocket 双向通信，集成 DeepSeek AI 和 RAGFlow 知识库
 
 ## 技术架构
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        统一后端服务 (Spring Boot)                   │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────┐ │
-│  │  WebSocket  │  │   REST API  │  │  MySQL 8.0  │  │ JWT认证 │ │
-│  │   服务      │  │   服务      │  │  数据存储    │  │  服务   │ │
-│  └─────────────┘  └─────────────┘  └─────────────┘  └─────────┘ │
-└───────────────────────────┬─────────────────────────────────────┘
-                            │
-            ┌───────────────┴───────────────┐
-            │                               │
-      ┌─────┴─────┐                 ┌──────┴──────┐
-      │  Android  │                 │   Web后台    │
-      │  游客端   │◄───────────────►│  管理员端   │
-      │  (Kotlin) │    WebSocket    │  (React)    │
-      └───────────┘                 └─────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│                    统一后端 (Spring Boot 2.7 + HTTPS)               │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────────────┐  │
+│  │ REST API │  │WebSocket │  │ MySQL 8  │  │ DeepSeek/RAGFlow │  │
+│  └──────────┘  └──────────┘  └──────────┘  └──────────────────┘  │
+└──────────────────────────┬───────────────────────────────────────┘
+                           │
+           ┌───────────────┴───────────────┐
+           │                               │
+     ┌─────┴──────┐                  ┌─────┴──────┐
+     │  Android   │                  │  Web 后台   │
+     │  Compose   │◄─── WebSocket ──►│  React 18  │
+     │  Live2D    │                  │  Antd + ECharts │
+     └────────────┘                  └────────────┘
 ```
 
 ## 目录结构
 
 ```
-jingqu/
-├── SPEC.md                    # 项目规格说明书
-├── README.md                  # 项目主文档（本文件）
-│
-├── backend/                   # 统一后端服务
+├── backend/                    # Spring Boot 后端
 │   ├── src/main/java/com/jingqu/
-│   │   ├── config/           # 配置类（WebSocket、安全、跨域）
-│   │   ├── controller/       # REST API控制器
-│   │   ├── service/          # 业务服务层
-│   │   ├── websocket/        # WebSocket消息处理
-│   │   ├── entity/           # 实体类
-│   │   ├── mapper/           # MyBatis Mapper
-│   │   └── dto/              # 数据传输对象
-│   ├── src/main/resources/
-│   │   ├── application.yml  # 应用配置
-│   │   └── schema.sql        # 数据库初始化脚本
-│   └── pom.xml               # Maven依赖配置
+│   │   ├── config/            # WebSocket、安全、跨域配置
+│   │   ├── controller/        # REST API（RagFlow、Admin、Statistics）
+│   │   ├── service/           # 业务层（RagFlow、DeepSeek、WebSocket）
+│   │   ├── entity/            # JPA 实体
+│   │   ├── dto/               # 数据传输对象
+│   │   └── websocket/         # STOMP 消息处理
+│   └── src/main/resources/
+│       ├── application.yml    # SSL、数据库、AI 配置
+│       └── schema.sql         # 数据库初始化
 │
-├── android/                   # Android游客端
+├── android/                    # Android 游客端 (Jetpack Compose)
 │   └── app/src/main/java/com/jingqu/visitor/
-│       ├── data/             # 数据层（API、WebSocket、Repository）
-│       ├── domain/           # 业务用例
-│       ├── ui/               # UI层（Compose组件、屏幕、主题）
-│       └── di/               # 依赖注入（Hilt）
+│       ├── data/              # API、WebSocket、Models、Repository
+│       ├── domain/usecase/    # ChatUseCase（路线数据流）
+│       ├── ui/
+│       │   ├── screens/       # HomeScreen、AIAssistantScreen、
+│       │   │                   # MapRouteScreen、MainViewModel
+│       │   ├── components/    # ChatBubble、Live2DModelCard
+│       │   └── theme/         # Color、Typography
+│       └── di/                # Hilt 依赖注入
 │
-└── admin-web/                 # Web管理员端
-    └── src/
-        ├── api/              # API接口、WebSocket客户端
-        ├── components/       # React组件
-        │   ├── Dashboard/    # 数据大屏
-        │   ├── Knowledge/    # 知识库管理
-        │   └── Notification/ # 通知管理
-        ├── pages/           # 页面组件
-        ├── store/           # 状态管理（Zustand）
-        └── types/           # TypeScript类型定义
+├── admin-web/                  # React Web 管理后台
+│   └── src/
+│       ├── api/               # Axios + WebSocket 客户端
+│       ├── components/        # Dashboard、Knowledge、Notification
+│       ├── pages/             # Login、Interactions
+│       └── store/             # Zustand 状态管理
+│
+└── data/                       # RAGFlow 知识库导入数据
 ```
 
 ## 核心功能
 
-### 游客端功能
-- AI数字人智能问答
-- 快捷问题卡片（景点介绍、路线规划、餐饮服务、帮助服务）
-- WebSocket实时通信
-- 紧急通知弹窗接收
-- 知识库更新实时同步
-- 消息气泡样式展示
+### 游客端（Android）
 
-### 管理员端功能
-- 管理员登录认证（JWT）
-- 数据大屏实时监控
-  - 今日服务人次
-  - 当前在线游客
-  - 独立访客统计
-  - 满意度指标
-- ECharts数据可视化
-  - 实时交互趋势图
-  - 热门问答TOP10
-  - 热门景点分布饼图
-- 知识库管理
-  - 增删改查操作
-  - 分类筛选
-  - 一键同步到游客端
-- 紧急通知推送
-  - 创建通知
-  - 即时推送到所有游客
-  - 通知历史管理
-- 交互记录查看
-- 历史统计数据报表
+| 功能 | 说明 |
+|------|------|
+| AI 智能问答 | DeepSeek + RAGFlow 双引擎，景区上下文感知 |
+| 数字人模式 | Live2D Cubism SDK，支持 Mao/Haru/Hiyori 模型切换 |
+| 路线导览 | 高德地图 WebView + 步行 API，逐段绘制游览路线 |
+| 路线离群检测 | 自动过滤高德定位偏移 >3km 的同名 POI |
+| 景区选择 | 个人中心预设 5 大景区（灵山胜境/黄山/故宫/西湖/张家界） |
+| 快捷服务 | 路线规划、景点讲解、餐饮推荐、交通指引等 6 项 |
+| 4-Tab 导航 | 首页 / AI助手 / 路线导览 / 我的 |
 
-### WebSocket双向通信
-| 方向 | 消息类型 | 说明 |
-|------|---------|------|
-| 游客→后端→管理员 | VISITOR_MESSAGE | 游客发送消息，广播到大屏 |
-| 后端→游客 | AI_RESPONSE | AI回复消息 |
-| 管理员→后端→游客 | NOTIFICATION | 紧急通知推送 |
-| 管理员→后端→游客 | KNOWLEDGE_UPDATE | 知识库更新通知 |
-| 后端→管理员 | DASHBOARD_UPDATE | 大屏数据实时更新 |
+### 管理员端（Web）
+
+- JWT 登录认证
+- 数据大屏实时监控（服务人次、在线游客、满意度）
+- ECharts 可视化（交互趋势、热门问答 TOP10、景点分布）
+- 知识库 CRUD + 一键同步
+- 紧急通知即时推送
+- 交互记录与历史统计
 
 ## 快速开始
 
-### 1. 后端服务
+### 1. 后端
 
-#### 环境要求
-- JDK 17+
-- MySQL 8.0+
-- Maven 3.8+
-
-#### 启动步骤
 ```bash
 cd backend
-
-# 创建数据库
-mysql -u root -p < src/main/resources/schema.sql
-
-# 修改数据库配置
-# 编辑 src/main/resources/application.yml
-
-# 编译打包
+# 要求: JDK 17+, MySQL 8.0+
+# 修改 application.yml 中的数据库密码和 AI API Key
 mvn clean package -DskipTests
-
-# 运行服务
 java -jar target/jingqu-backend-1.0.0.jar
+# HTTPS 运行在 8443 端口
 ```
 
-服务启动后访问：`http://localhost:8080`
+### 2. Android
 
-### 2. Android游客端
-
-#### 环境要求
-- Android Studio Hedgehog (2023.1.1)+
-- Kotlin 1.9+
-- Android SDK 34
-
-#### 启动步骤
 ```bash
 cd android
-
-# 导入项目到Android Studio
-# 等待Gradle同步完成
-
-# 配置后端服务器地址
-# 编辑 app/build.gradle.kts 中的 debug 配置
-
-# 连接设备或模拟器
-# 运行应用
+# 要求: Android Studio, SDK 34, Kotlin 1.9+
+# 用 Android Studio 打开项目，Gradle 同步后运行
+# 手机需通过 adb reverse tcp:8443 tcp:8443 连接后端
 ```
 
-### 3. Web管理员端
+### 3. Web 后台
 
-#### 环境要求
-- Node.js 18+
-- npm 9+
-
-#### 启动步骤
 ```bash
 cd admin-web
-
-# 安装依赖
 npm install
-
-# 开发模式
 npm run dev
-
-# 生产构建
-npm run build
+# 访问 http://localhost:3000
+# 默认账号: admin / admin123
 ```
 
-访问：`http://localhost:3000`
+## API 接口
 
-## 默认管理员
-
-```
-用户名：admin
-密码：admin123
-```
-
-## API接口文档
-
-### 管理员认证
+### AI 对话
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| POST | /api/admin/login | 管理员登录 |
-| POST | /api/admin/logout | 管理员登出 |
-| GET | /api/admin/profile | 获取管理员信息 |
+| POST | /api/ragflow/chat | AI 对话（含路线提取） |
 
-### 知识库管理
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | /api/knowledge | 获取知识库列表 |
-| POST | /api/knowledge | 添加知识库条目 |
-| PUT | /api/knowledge/{id} | 更新知识库条目 |
-| DELETE | /api/knowledge/{id} | 删除知识库条目 |
-| POST | /api/knowledge/sync | 同步知识库 |
-
-### 紧急通知
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | /api/notifications | 获取通知列表 |
-| POST | /api/notifications | 创建通知 |
-| DELETE | /api/notifications/{id} | 删除通知 |
-
-### 统计数据
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | /api/statistics/today | 今日统计 |
-| GET | /api/statistics/realtime | 实时大屏数据 |
-| GET | /api/statistics/history | 历史统计 |
-
-### WebSocket端点
+### WebSocket
 | 端点 | 说明 |
 |------|------|
-| /ws | STOMP WebSocket端点 |
-| /topic/all-visitors | 广播到所有游客 |
-| /topic/visitor/{id} | 发送到特定游客 |
-| /topic/admin/dashboard | 管理员大屏更新 |
+| /ws | STOMP 端点 |
+| /topic/visitor/{id} | 游客消息推送 |
+| /topic/admin/dashboard | 大屏实时更新 |
 
-## 数据库表
-
-| 表名 | 说明 |
-|------|------|
-| admins | 管理员表 |
-| visitor_interactions | 游客交互记录 |
-| knowledge_base | 知识库 |
-| emergency_notifications | 紧急通知 |
-| daily_statistics | 每日统计 |
-| online_visitors | 在线访客 |
-
-## 技术栈汇总
+## 技术栈
 
 | 模块 | 技术 |
 |------|------|
-| 后端框架 | Spring Boot 2.7 |
-| 数据库 | MySQL 8.0 + MyBatis-Plus |
-| WebSocket | Spring WebSocket + STOMP |
-| 认证 | JWT |
-| Android UI | Jetpack Compose |
-| Android架构 | MVVM + Hilt |
-| Web框架 | React 18 + TypeScript |
-| Web UI | Ant Design 5 + ECharts |
-| Web状态 | Zustand |
+| 后端 | Spring Boot 2.7, MySQL 8.0, MyBatis-Plus, JWT |
+| AI | DeepSeek API, RAGFlow 知识库 |
+| Android | Jetpack Compose, Hilt, OkHttp, Gson |
+| 地图 | 高德 JS API v2 (WebView + Walking API) |
+| 数字人 | Live2D Cubism SDK for Java |
+| Web | React 18, TypeScript, Ant Design 5, ECharts, Zustand |
 
-## 开发团队
+## 预设景区
 
-- 项目设计：AI Assistant
-- 开发日期：2026-05-06
+| 景区 | 城市 | 说明 |
+|------|------|------|
+| 灵山胜境 | 无锡市 | 佛教圣地，灵山大佛 |
+| 黄山 | 黄山市 | 奇松怪石，云海温泉 |
+| 故宫 | 北京市 | 皇家宫殿，六百年辉煌 |
+| 西湖 | 杭州市 | 淡妆浓抹总相宜 |
+| 张家界 | 张家界市 | 峰林奇观，人间仙境 |
 
 ## License
 
-本项目仅供学习参考使用。
+仅供学习参考使用。
