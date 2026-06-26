@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -160,6 +161,9 @@ fun SettingsScreen(viewModel: MainViewModel = hiltViewModel()) {
     val uiState by viewModel.uiState.collectAsState()
     val currentSpot = uiState.currentScenicSpot
 
+    var customInput by remember { mutableStateOf("") }
+    var showCustomInput by remember { mutableStateOf(false) }
+
     val spots = listOf(
         ScenicSpotData("灵山胜境", "无锡市", "🏔", "佛教圣地，灵山大佛"),
         ScenicSpotData("黄山", "黄山市", "⛰", "奇松怪石，云海温泉"),
@@ -167,6 +171,8 @@ fun SettingsScreen(viewModel: MainViewModel = hiltViewModel()) {
         ScenicSpotData("西湖", "杭州市", "🌊", "淡妆浓抹总相宜"),
         ScenicSpotData("张家界", "张家界市", "🏞", "峰林奇观，人间仙境")
     )
+
+    val isCustomSpot = currentSpot != "景区入口" && currentSpot !in spots.map { it.name }
 
     Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         // 头部
@@ -205,6 +211,51 @@ fun SettingsScreen(viewModel: MainViewModel = hiltViewModel()) {
         val sel = spots.firstOrNull { it.name == currentSpot }
         if (sel != null) {
             Text("📍 ${sel.city} · ${sel.desc}", style = MaterialTheme.typography.labelSmall, color = OnBackground.copy(alpha = 0.5f), modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
+        } else if (isCustomSpot && currentSpot != "景区入口") {
+            Text("📍 自定义景区 · $currentSpot", style = MaterialTheme.typography.labelSmall, color = Primary.copy(alpha = 0.7f), modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
+        }
+
+        // 自定义景区输入
+        Spacer(modifier = Modifier.height(8.dp))
+        if (showCustomInput) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                OutlinedTextField(
+                    value = customInput,
+                    onValueChange = { customInput = it },
+                    placeholder = { Text("输入景区名称", fontSize = 13.sp) },
+                    modifier = Modifier.weight(1f).height(52.dp),
+                    singleLine = true,
+                    textStyle = MaterialTheme.typography.bodyMedium
+                )
+                Button(
+                    onClick = {
+                        if (customInput.isNotBlank()) {
+                            viewModel.updateScenicSpot(customInput.trim())
+                            customInput = ""
+                            showCustomInput = false
+                        }
+                    },
+                    modifier = Modifier.height(52.dp),
+                    shape = RoundedCornerShape(10.dp)
+                ) { Text("确认") }
+                IconButton(
+                    onClick = { showCustomInput = false; customInput = "" },
+                    modifier = Modifier.size(32.dp)
+                ) { Icon(Icons.Default.Close, "取消", modifier = Modifier.size(18.dp)) }
+            }
+        } else {
+            TextButton(
+                onClick = { showCustomInput = true; customInput = "" },
+                modifier = Modifier.padding(horizontal = 12.dp)
+            ) {
+                Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp))
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(if (isCustomSpot) "修改自定义景区" else "自定义景区", fontSize = 13.sp)
+            }
         }
 
         Spacer(modifier = Modifier.height(16.dp))

@@ -108,10 +108,28 @@ class MainViewModel @Inject constructor(
         if (_uiState.value.isMuted) stopSpeaking()
     }
 
+    /** Strip Markdown formatting so TTS doesn't read # as "杠" or * as "星星" */
+    private fun stripMarkdown(text: String): String {
+        return text
+            .replace(Regex("""#{1,6}\s+"""), "")       // # ## ### headers
+            .replace(Regex("""\*{1,3}([^*]+)\*{1,3}"""), "$1") // **bold** *italic*
+            .replace(Regex("""_{1,3}([^_]+)_{1,3}"""), "$1")   // __bold__ _italic_
+            .replace(Regex("""~~([^~]+)~~"""), "$1")            // ~~strikethrough~~
+            .replace(Regex("""`{1,3}[^`]*`{1,3}"""), "")       // `code` ```blocks```
+            .replace(Regex("""\[([^\]]+)]\([^)]+\)"""), "$1")  // [text](url)
+            .replace(Regex("""^[-*+]\s+""", RegexOption.MULTILINE), "")  // - * + list
+            .replace(Regex("""^\d+\.\s+""", RegexOption.MULTILINE), "")  // 1. numbered list
+            .replace(Regex("""^>\s+""", RegexOption.MULTILINE), "")      // > blockquote
+            .replace("*", "").replace("#", "")   // leftover markers
+            .replace(Regex("""\n{3,}"""), "\n\n") // collapse excessive newlines
+            .trim()
+    }
+
     /** 调豆包 TTS → 播放音频 + 嘴部动画 */
     private fun speak(text: String) {
         if (text.isBlank() || _uiState.value.isMuted) return
-        val ttsText = if (text.length > 500) text.take(500) else text
+        val cleaned = stripMarkdown(text)
+        val ttsText = if (cleaned.length > 500) cleaned.take(500) else cleaned
         Log.d("TTS", "speak called, textLen=${text.length}, ttsLen=${ttsText.length}")
         viewModelScope.launch {
             try {

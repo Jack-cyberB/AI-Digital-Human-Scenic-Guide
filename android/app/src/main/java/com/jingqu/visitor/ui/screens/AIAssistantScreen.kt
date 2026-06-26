@@ -45,6 +45,13 @@ fun AIAssistantScreen(viewModel: MainViewModel = hiltViewModel()) {
                     title = { Text("AI助手", color = OnPrimary) },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = Primary),
                     actions = {
+                        IconButton(onClick = { viewModel.toggleMute() }) {
+                            Icon(
+                                if (uiState.isMuted) Icons.Default.VolumeOff else Icons.Default.VolumeUp,
+                                contentDescription = if (uiState.isMuted) "取消静音" else "静音",
+                                tint = OnPrimary
+                            )
+                        }
                         IconButton(onClick = { isDigitalHumanMode = true }) {
                             Icon(Icons.Default.Face, "数字人模式", tint = OnPrimary)
                         }

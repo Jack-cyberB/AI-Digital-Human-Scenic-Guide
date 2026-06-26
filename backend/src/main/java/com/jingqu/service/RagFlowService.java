@@ -163,7 +163,8 @@ public class RagFlowService {
                 "- 交通方式建议\\n" +
                 "- 美食推荐\\n" +
                 "- 实用的旅行贴士\\n" +
-                "回答要详细具体，方便后续提取路线信息。"));
+                "回答要详细具体，方便后续提取路线信息。" +
+                "注意：回复中不要使用任何Markdown格式标记（如#、**、*、`等），使用纯文本自然分段。"));
             messages.add(Map.of("role", "user", "content", request.getMessage() != null ? request.getMessage() : ""));
             payload.put("messages", messages);
 
