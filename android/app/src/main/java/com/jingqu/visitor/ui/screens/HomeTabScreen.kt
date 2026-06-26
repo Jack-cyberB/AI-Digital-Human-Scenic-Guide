@@ -25,6 +25,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.jingqu.visitor.ui.theme.*
+import androidx.hilt.navigation.compose.hiltViewModel
 
 data class ScenicCarouselItem(
     val title: String,
@@ -35,12 +36,17 @@ data class ScenicCarouselItem(
 data class ServiceItem(
     val icon: ImageVector,
     val label: String,
-    val color: Color
+    val color: Color,
+    val prompt: String = ""
 )
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun HomeTabScreen() {
+fun HomeTabScreen(viewModel: MainViewModel = hiltViewModel()) {
+    val uiState by viewModel.uiState.collectAsState()
+    val currentSpot = uiState.currentScenicSpot
+    val prefix = if (currentSpot != "景区入口") "在${currentSpot}" else ""
+
     val carouselItems = listOf(
         ScenicCarouselItem("黄 山", "奇松怪石 · 云海温泉", listOf(Color(0xFF1A5276), Color(0xFF2E86C1))),
         ScenicCarouselItem("故 宫", "皇家宫殿 · 六百年辉煌", listOf(Color(0xFF922B21), Color(0xFFC0392B))),
@@ -49,14 +55,14 @@ fun HomeTabScreen() {
     )
 
     val services = listOf(
-        ServiceItem(Icons.Default.Place, "景点介绍", Color(0xFFE74C3C)),
-        ServiceItem(Icons.Default.Navigation, "路线规划", Color(0xFF3498DB)),
-        ServiceItem(Icons.Default.Restaurant, "餐饮服务", Color(0xFFF39C12)),
-        ServiceItem(Icons.Default.Hotel, "住宿推荐", Color(0xFF9B59B6)),
-        ServiceItem(Icons.Default.Info, "景区公告", Color(0xFF1ABC9C)),
-        ServiceItem(Icons.Default.Warning, "紧急求助", Color(0xFFE74C3C)),
-        ServiceItem(Icons.Default.DirectionsBus, "交通导览", Color(0xFF2ECC71)),
-        ServiceItem(Icons.Default.CameraAlt, "拍照打卡", Color(0xFFE91E63))
+        ServiceItem(Icons.Default.Place, "景点介绍", Color(0xFFE74C3C), "${prefix}请详细介绍一下这里的著名景点，包括历史背景和游览建议".trim()),
+        ServiceItem(Icons.Default.Navigation, "路线规划", Color(0xFF3498DB), "${prefix}请为我规划一份详细的游览路线，包括上午和下午的景点安排、交通方式和美食推荐".trim()),
+        ServiceItem(Icons.Default.Restaurant, "餐饮服务", Color(0xFFF39C12), "${prefix}附近有什么特色餐厅推荐？请具体到店名和招牌菜".trim()),
+        ServiceItem(Icons.Default.Hotel, "住宿推荐", Color(0xFF9B59B6), "${prefix}附近有什么推荐的住宿？包括酒店和民宿".trim()),
+        ServiceItem(Icons.Default.Info, "景区公告", Color(0xFF1ABC9C), "${prefix}今天有什么特别活动或公告吗？".trim()),
+        ServiceItem(Icons.Default.Warning, "紧急求助", Color(0xFFE74C3C), "${prefix}我需要帮助，附近的服务点在哪里？".trim()),
+        ServiceItem(Icons.Default.DirectionsBus, "交通导览", Color(0xFF2ECC71), "${prefix}各个景点之间怎么走最方便？推荐交通方式".trim()),
+        ServiceItem(Icons.Default.CameraAlt, "拍照打卡", Color(0xFFE91E63), "${prefix}有哪些值得拍照打卡的地方？请推荐一些拍照角度".trim())
     )
 
     val pagerState = rememberPagerState(pageCount = { carouselItems.size })
@@ -119,7 +125,7 @@ fun HomeTabScreen() {
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier
                         .clip(RoundedCornerShape(12.dp))
-                        .clickable { }
+                        .clickable { viewModel.sendMessage(s.prompt) }
                         .padding(8.dp)
                 ) {
                     Box(

@@ -33,7 +33,7 @@ fun AIAssistantScreen(viewModel: MainViewModel = hiltViewModel()) {
     val listState = rememberLazyListState()
     var isDigitalHumanMode by remember { mutableStateOf(false) }
 
-    LaunchedEffect(uiState.messages.size) {
+    LaunchedEffect(uiState.messages.size, uiState.messages.lastOrNull()?.content?.length) {
         if (uiState.messages.isNotEmpty()) listState.animateScrollToItem(uiState.messages.size - 1)
     }
 
@@ -70,8 +70,21 @@ fun AIAssistantScreen(viewModel: MainViewModel = hiltViewModel()) {
                     Box(modifier = Modifier.fillMaxWidth().weight(0.55f)) {
                         Live2DModelCard(modifier = Modifier.fillMaxSize())
 
-                        // 右上角：关闭 + 模型切换
+                        // 右上角：静音 + 关闭 + 模型切换
                         Column(modifier = Modifier.align(Alignment.TopEnd).padding(8.dp), horizontalAlignment = Alignment.End) {
+                            // 静音按钮
+                            IconButton(
+                                onClick = { viewModel.toggleMute() },
+                                modifier = Modifier.size(36.dp).background(Color.Black.copy(alpha = 0.15f), CircleShape)
+                            ) {
+                                Icon(
+                                    if (uiState.isMuted) Icons.Default.VolumeOff else Icons.Default.VolumeUp,
+                                    contentDescription = if (uiState.isMuted) "取消静音" else "静音",
+                                    tint = Color(0xFF333333),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(6.dp))
                             IconButton(
                                 onClick = { isDigitalHumanMode = false },
                                 modifier = Modifier.size(36.dp).background(Color.Black.copy(alpha = 0.15f), CircleShape)
@@ -107,7 +120,7 @@ fun AIAssistantScreen(viewModel: MainViewModel = hiltViewModel()) {
                         state = listState,
                         modifier = Modifier.fillMaxWidth().weight(0.45f).background(Color.White).padding(horizontal = 12.dp, vertical = 4.dp)
                     ) {
-                        items(uiState.messages, key = { it.id }) { msg ->
+                        items(uiState.messages.filter { it.isFromUser || it.content.isNotEmpty() }, key = { it.id }) { msg ->
                             Text(
                                 text = if (msg.isFromUser) "👤 ${msg.content}" else "🤖 ${msg.content}",
                                 color = Color(0xFF333333),
@@ -128,7 +141,7 @@ fun AIAssistantScreen(viewModel: MainViewModel = hiltViewModel()) {
                         val connectionError = uiState.connectionError
                         if (connectionError != null) { ErrorNotice(message = connectionError, onRetry = viewModel::reconnect, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) }
                         LazyColumn(state = listState, modifier = Modifier.weight(1f).fillMaxWidth(), contentPadding = PaddingValues(vertical = 8.dp)) {
-                            items(uiState.messages, key = { it.id }) { msg -> ChatBubble(message = msg) }
+                            items(uiState.messages.filter { it.isFromUser || it.content.isNotEmpty() }, key = { it.id }) { msg -> ChatBubble(message = msg) }
                             if (uiState.isTyping) item { TypingIndicator() }
                         }
                     }

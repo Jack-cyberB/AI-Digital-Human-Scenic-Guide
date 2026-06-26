@@ -18,3 +18,15 @@ _aar_extract/
 _aar_unpacked/
 _aarinspect/
 _core_extract/
+Pic/
+*.log
+*.p12
+keystore.p12
+.playwright-mcp/
+backend/backend.err
+backend/backend.out
+admin-web/.vite/
+admin-web/dist/
+admin-web/*.log
+*.png
+*.jpg

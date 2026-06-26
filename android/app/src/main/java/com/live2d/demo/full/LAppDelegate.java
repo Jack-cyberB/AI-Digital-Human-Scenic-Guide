@@ -47,6 +47,27 @@ public class LAppDelegate {
         }
     }
 
+    /** Bridge: play random expression on GL thread */
+    public static void playRandomExpression() {
+        if (glSurfaceView != null && LAppLive2DManager.isReady()) {
+            glSurfaceView.queueEvent(() -> LAppLive2DManager.getInstance().playRandomExpression());
+        }
+    }
+
+    /** Bridge: play random motion on GL thread */
+    public static void playRandomMotion() {
+        if (glSurfaceView != null && LAppLive2DManager.isReady()) {
+            glSurfaceView.queueEvent(() -> LAppLive2DManager.getInstance().playRandomMotion());
+        }
+    }
+
+    /** Bridge: set lip sync mouth value on GL thread */
+    public static void setLipSync(float value) {
+        if (glSurfaceView != null && LAppLive2DManager.isReady()) {
+            glSurfaceView.queueEvent(() -> LAppLive2DManager.getInstance().setLipSync(value));
+        }
+    }
+
     public static LAppDelegate getInstance() {
         if (s_instance == null) {
             s_instance = new LAppDelegate();
@@ -62,6 +83,8 @@ public class LAppDelegate {
             s_instance = null;
         }
     }
+
+    public boolean isActive() { return isActive; }
 
     /**
      * アプリケーションを非アクティブにする

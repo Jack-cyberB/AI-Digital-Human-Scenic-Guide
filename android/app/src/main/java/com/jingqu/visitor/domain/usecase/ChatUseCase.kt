@@ -1,13 +1,17 @@
 package com.jingqu.visitor.domain.usecase
 
 import com.jingqu.visitor.data.api.ApiService
+import com.jingqu.visitor.data.api.StreamingChatClient
 import com.jingqu.visitor.data.api.WebSocketClient
 import com.jingqu.visitor.data.model.ChatMessage
 import com.jingqu.visitor.data.model.KnowledgeItem
 import com.jingqu.visitor.data.model.KnowledgeUpdate
 import com.jingqu.visitor.data.model.Notification
+import com.jingqu.visitor.data.model.PlaceEnrichRequest
+import com.jingqu.visitor.data.model.PlaceEnrichResponse
 import com.jingqu.visitor.data.repository.PreferencesRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.channels.Channel
 import javax.inject.Inject
@@ -15,7 +19,8 @@ import javax.inject.Inject
 class ChatUseCase @Inject constructor(
     private val webSocketClient: WebSocketClient,
     private val preferencesRepository: PreferencesRepository,
-    private val apiService: ApiService
+    private val apiService: ApiService,
+    private val streamingChatClient: StreamingChatClient
 ) {
     val connectionState: Flow<WebSocketClient.ConnectionState> = webSocketClient.connectionState
     val messages: Flow<ChatMessage> = webSocketClient.messages
@@ -33,6 +38,25 @@ class ChatUseCase @Inject constructor(
     suspend fun connect(scenicSpot: String) {
         val visitorId = preferencesRepository.getVisitorId()
         webSocketClient.connect(visitorId, scenicSpot)
+    }
+
+    /**
+     * 流式发送消息，返回流式事件供 ViewModel 边收边渲染。
+     * 同时在收到 routes 事件时写入 routeData 流。
+     */
+    suspend fun streamMessage(content: String, scenicSpot: String = "景区入口"): Flow<StreamingChatClient.StreamEvent> {
+        val message = com.jingqu.visitor.data.model.VisitorMessage(
+            visitorId = preferencesRepository.getVisitorId(),
+            sessionId = preferencesRepository.getSessionId(),
+            message = content,
+            scenicSpot = scenicSpot,
+            timestamp = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())
+        )
+        return streamingChatClient.stream(message).buffer(Channel.UNLIMITED)
+    }
+
+    fun publishRouteData(dailyRoutes: String, mode: String) {
+        _routeData.trySend(Pair(dailyRoutes, mode))
     }
 
     suspend fun sendMessage(content: String, scenicSpot: String = "景区入口") {
@@ -71,6 +95,15 @@ class ChatUseCase @Inject constructor(
             return response.body()?.data.orEmpty()
         }
         return emptyList()
+    }
+
+    suspend fun enrichPlace(keyword: String, city: String): PlaceEnrichResponse {
+        val response = apiService.enrichPlace(PlaceEnrichRequest(keyword, city))
+        if (response.isSuccessful) {
+            val data = response.body()?.data
+            if (data != null) return data
+        }
+        return PlaceEnrichResponse(aiDescription = "暂无详细介绍", aiReviews = emptyList())
     }
 
     fun disconnect() {

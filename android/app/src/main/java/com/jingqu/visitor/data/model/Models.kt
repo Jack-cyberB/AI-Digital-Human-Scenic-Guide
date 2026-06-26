@@ -85,3 +85,75 @@ data class QuickQuestion(
     val icon: String,
     val question: String
 )
+
+// === POI / Place models ===
+
+data class PoiDetailData(
+    val name: String = "",
+    val address: String = "",
+    val city: String = "",
+    val lat: Double = 0.0,
+    val lng: Double = 0.0,
+    val category: String = "",       // 景点/美食/饮品/购物/住宿
+    val categoryTag: String = "",    // Amap type e.g. "风景名胜"
+    val rating: Double? = null,
+    val reviewCount: Int? = null,
+    val openingHours: String = "",
+    val phone: String = "",
+    val cost: String = "",
+    val photos: List<String> = emptyList(),
+    val aiDescription: String? = null,
+    val aiReviews: List<ReviewCard> = emptyList()
+)
+
+data class ReviewCard(
+    val userName: String = "",
+    val avatarUrl: String = "",
+    val content: String = "",
+    val likeCount: Int = 0,
+    val rating: Int = 5  // 1-5
+)
+
+enum class PoiCategory(
+    val label: String,
+    val amapType: String,
+    val emoji: String,
+    val color: Long
+) {
+    SCENIC("景点", "风景名胜|公园广场|风景名胜相关", "🏔", 0xFFFF6B35),  // 🏔
+    FOOD("美食", "餐饮服务|中餐厅|异国餐厅|小吃快餐", "🍜", 0xFFFF4757),   // 🍜
+    DRINK("饮品", "茶艺馆|咖啡馆|冷饮店|糕饼店", "🥤", 0xFF2ED573),      // 🥤
+    SHOPPING("购物", "购物服务|综合商场|特色商街", "🛍", 0xFF1E90FF),     // 🛍
+    HOTEL("住宿", "住宿服务|宾馆酒店|旅馆招待所", "🏨", 0xFF9B59B6)       // 🏨
+}
+
+data class PlaceEnrichRequest(
+    val keyword: String,
+    val city: String
+)
+
+data class PlaceEnrichResponse(
+    val aiDescription: String? = null,
+    val aiReviews: List<ReviewCard> = emptyList()
+)
+
+/**
+ * Matches backend PlaceDetailDTO response shape
+ */
+data class PlaceDetailDTO(
+    val name: String = "",
+    val address: String = "",
+    val city: String = "",
+    val lat: Double? = null,
+    val lng: Double? = null,
+    val category: String? = null,
+    val categoryTag: String? = null,
+    val rating: Double? = null,
+    val reviewCount: Int? = null,
+    val openingHours: String? = null,
+    val phone: String? = null,
+    val cost: String? = null,
+    val photos: List<String>? = null,
+    val aiDescription: String? = null,
+    val aiReviews: List<ReviewCard>? = null
+)

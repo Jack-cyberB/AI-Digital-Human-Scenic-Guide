@@ -61,6 +61,15 @@ deepseek:
   api-key: ${DEEPSEEK_API_KEY:}
   model: deepseek-chat
 
+# 高德地图配置
+amap:
+  api-key: 4f92d1e69d842f517f46af6b62ef0e80
+
+# 豆包 TTS 配置
+doubao:
+  api-key: e4c5f1fc-e7fc-4cb3-a36f-4649dfe443bd
+  tts-url: https://openspeech.bytedance.com/api/v1/tts
+
 # WebSocket配置
 websocket:
   heartbeat-interval: 30000

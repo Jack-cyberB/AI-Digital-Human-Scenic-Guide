@@ -13,8 +13,16 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 
 @Slf4j
 @Service
@@ -64,6 +72,85 @@ public class RagFlowService {
 
     @org.springframework.beans.factory.annotation.Value("${deepseek.model}")
     private String deepseekModel;
+
+    /**
+     * 流式调用 DeepSeek，每收到一段文本就通过 onDelta 回调推送。
+     * 返回完整的回答文本（用于后续路线提取）。
+     */
+    public String streamDeepSeek(RagFlowChatRequest request, Consumer<String> onDelta, AtomicBoolean active) throws Exception {
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("model", deepseekModel);
+        payload.put("stream", true);
+        List<Map<String, String>> messages = new ArrayList<>();
+        messages.add(Map.of("role", "system", "content",
+            "你是一个专业的旅游规划助手。请为用户提供详细的旅游攻略，包括：\n" +
+            "- 景点介绍和游览顺序（上午/下午安排）\n" +
+            "- 交通方式建议\n" +
+            "- 美食推荐\n" +
+            "- 实用的旅行贴士\n" +
+            "回答要详细具体，方便后续提取路线信息。"));
+        messages.add(Map.of("role", "user", "content", request.getMessage() != null ? request.getMessage() : ""));
+        payload.put("messages", messages);
+
+        String url = normalizeBaseUrl(deepseekBaseUrl) + "/v1/chat/completions";
+        String body = objectMapper.writeValueAsString(payload);
+
+        HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
+        conn.setRequestMethod("POST");
+        conn.setRequestProperty("Content-Type", "application/json");
+        conn.setRequestProperty("Authorization", "Bearer " + deepseekApiKey);
+        conn.setRequestProperty("Accept", "text/event-stream");
+        conn.setDoOutput(true);
+        conn.setConnectTimeout(15000);
+        conn.setReadTimeout(120000);
+        conn.getOutputStream().write(body.getBytes(StandardCharsets.UTF_8));
+
+        StringBuilder full = new StringBuilder();
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.isEmpty() || !line.startsWith("data:")) continue;
+                String data = line.substring(5).trim();
+                if ("[DONE]".equals(data)) break;
+                try {
+                    JsonNode node = objectMapper.readTree(data);
+                    JsonNode choices = node.path("choices");
+                    if (choices.isArray() && choices.size() > 0) {
+                        String delta = choices.get(0).path("delta").path("content").asText("");
+                        if (!delta.isEmpty()) {
+                            full.append(delta);
+                            onDelta.accept(delta);
+                            if (!active.get()) {
+                                log.info("客户端断开，停止流式读取");
+                                break;
+                            }
+                        }
+                    }
+                } catch (Exception parseEx) {
+                    log.debug("跳过无法解析的流式分片: {}", data);
+                }
+            }
+        } finally {
+            conn.disconnect();
+        }
+        return full.toString();
+    }
+
+    /**
+     * 给定已生成的完整回答，提取路线数据。供流式接口在正文流完后调用。
+     */
+    public RagFlowChatResponse buildRouteResponse(RagFlowChatRequest request, String answer) {
+        RagFlowChatResponse resp = new RagFlowChatResponse();
+        resp.setVisitorId(request.getVisitorId());
+        resp.setSessionId(request.getSessionId());
+        resp.setScenicSpot(request.getScenicSpot());
+        resp.setAnswer(answer);
+        resp.setSource("deepseek");
+        resp.setTimestamp(LocalDateTime.now());
+        extractRoutesFromAnswer(resp);
+        return resp;
+    }
 
     private RagFlowChatResponse chatWithDeepSeek(RagFlowChatRequest request) {
         try {

@@ -263,6 +263,27 @@ public class LAppLive2DManager {
         return modelDir;
     }
 
+    /** Bridge: play random expression on current model (for Kotlin TTS trigger) */
+    public void playRandomExpression() {
+        if (models.isEmpty()) return;
+        LAppModel model = getModel(0);
+        if (model != null && model.getModel() != null) model.setRandomExpression();
+    }
+
+    /** Bridge: play random TapBody motion on current model (for Kotlin TTS trigger) */
+    public void playRandomMotion() {
+        if (models.isEmpty()) return;
+        LAppModel model = getModel(0);
+        if (model != null && model.getModel() != null) model.startRandomMotion(MotionGroup.TAP_BODY.getId(), Priority.FORCE.getPriority());
+    }
+
+    /** Bridge: set mouth open value for lip sync (0.0=closed, 1.0=open) */
+    public void setLipSync(float value) {
+        if (models.isEmpty()) return;
+        LAppModel model = getModel(0);
+        if (model != null && model.getModel() != null) model.setLipSyncValue(value);
+    }
+
     /**
      * モーション再生時に実行されるコールバック関数
      */
@@ -291,13 +312,22 @@ public class LAppLive2DManager {
      * シングルトンインスタンス
      */
     private static LAppLive2DManager s_instance;
+    private static volatile boolean initialized = false;
+
+    public static boolean isReady() { return initialized && s_instance != null && !s_instance.models.isEmpty(); }
 
     private LAppLive2DManager() {
-        setUpModel();
-        android.util.Log.e("LAppLive2DManager", "Available models: " + modelDir.toString());
-        int defaultIdx = modelDir.indexOf("Mao");
-        android.util.Log.e("LAppLive2DManager", "Mao index: " + defaultIdx + ", loading model: " + (defaultIdx >= 0 ? "Mao" : modelDir.get(0)));
-        changeScene(defaultIdx >= 0 ? defaultIdx : 0);
+        try {
+            setUpModel();
+            android.util.Log.e("LAppLive2DManager", "Available models: " + modelDir.toString());
+            int defaultIdx = modelDir.indexOf("Mao");
+            android.util.Log.e("LAppLive2DManager", "Mao index: " + defaultIdx + ", loading model: " + (defaultIdx >= 0 ? "Mao" : modelDir.get(0)));
+            changeScene(defaultIdx >= 0 ? defaultIdx : 0);
+            initialized = true;
+        } catch (Exception e) {
+            android.util.Log.e("LAppLive2DManager", "Init failed: " + e.getMessage());
+            initialized = false;
+        }
     }
 
     private final List<LAppModel> models = new ArrayList<>();

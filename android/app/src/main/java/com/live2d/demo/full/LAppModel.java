@@ -117,7 +117,7 @@ public class LAppModel extends CubismUserModel {
             physics.evaluate(model, deltaTimeSeconds);
         }
         if (lipSync) {
-            float value = 0.0f;
+            float value = lipSyncValue;
             for (int i = 0; i < lipSyncIds.size(); i++) {
                 CubismId lipSyncId = lipSyncIds.get(i);
                 model.addParameterValue(lipSyncId, value, 0.8f);
@@ -383,6 +383,9 @@ public class LAppModel extends CubismUserModel {
     private float userTimeSeconds;
     private final List<CubismId> eyeBlinkIds = new ArrayList<>();
     private final List<CubismId> lipSyncIds = new ArrayList<>();
+    /** Mouth open value driven by TTS (0.0 = closed, 1.0 = open) */
+    private float lipSyncValue = 0.0f;
+    public void setLipSyncValue(float v) { this.lipSyncValue = Math.max(0f, Math.min(1f, v)); }
     private final Map<String, ACubismMotion> motions = new HashMap<>();
     private final Map<String, ACubismMotion> expressions = new HashMap<>();
     private final CubismId idParamAngleX;
